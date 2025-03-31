@@ -567,7 +567,6 @@ require('lazy').setup({
         Rule('(', ')', { 'typst', 'typ', 'latex', 'tex' }),
         Rule('{', '}', { 'typst', 'typ', 'latex', 'tex' }),
         Rule('[', ']', { 'typst', 'typ', 'latex', 'tex' }),
-        Rule('_', '_', { 'typst', 'markdown' }),
         Rule('*', '*', 'typst'),
       }
 

@@ -249,12 +249,6 @@ return {
   -- catppuccin if i want
   { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
 
-  -- display whitespace in visual mode
-  {
-    'mcauley-penney/visual-whitespace.nvim',
-    config = true,
-  },
-
   -- tabs
   {
     'romgrk/barbar.nvim',
