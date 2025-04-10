@@ -1130,5 +1130,12 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 vim.g.tabstop = 2
 vim.cmd 'set tabstop=2'
 
+vim.api.nvim_create_user_command('Google', function(o)
+  --local escaped = require('socket.url'.escape(o.args)
+  local escaped = vim.uri_encode(o.args)
+  local url = ('https://www.google.com/search?q=%s'):format(escaped)
+  vim.ui.open(url)
+end, { nargs = 1, desc = 'just google it' })
+
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
