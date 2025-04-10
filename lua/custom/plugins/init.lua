@@ -3,326 +3,325 @@
 --
 -- See the kickstart.nvim README for more information
 return {
-	-- snacks type shit
-	{
-		"folke/snacks.nvim",
-		lazy = false,
-		priority = 1000,
-		---@type snacks.Config
-		opts = {
-			bigfile = { enabled = true },
-			dashboard = { enabled = true },
-			indent = { enabled = true },
-			input = { enabled = true },
-			notifier = {
-				enabled = true,
-				timeout = 3000,
-			},
-			picker = { enabled = true },
-			quickfile = { enabled = true },
-			scope = { enabled = true },
-			statuscolumn = { enabled = true },
-			words = { enabled = true },
-			styles = {
-				notification = {
-					-- wo = { wrap = true } -- Wrap notifications
-				},
-			},
-		},
-		keys = {
-			-- git
-			{
-				"<leader>gb",
-				function()
-					Snacks.picker.git_branches()
-				end,
-				desc = "Git Branches",
-			},
-			{
-				"<leader>gl",
-				function()
-					Snacks.picker.git_log()
-				end,
-				desc = "Git Log",
-			},
-			{
-				"<leader>gL",
-				function()
-					Snacks.picker.git_log_line()
-				end,
-				desc = "Git Log Line",
-			},
-			{
-				"<leader>gs",
-				function()
-					Snacks.picker.git_status()
-				end,
-				desc = "Git Status",
-			},
-			{
-				"<leader>gS",
-				function()
-					Snacks.picker.git_stash()
-				end,
-				desc = "Git Stash",
-			},
-			{
-				"<leader>gd",
-				function()
-					Snacks.picker.git_diff()
-				end,
-				desc = "Git Diff (Hunks)",
-			},
-			{
-				"<leader>gf",
-				function()
-					Snacks.picker.git_log_file()
-				end,
-				desc = "Git Log File",
-			},
-			-- Grep
-			{
-				"<leader>sb",
-				function()
-					Snacks.picker.lines()
-				end,
-				desc = "Buffer Lines",
-			},
-			{
-				"<leader>sB",
-				function()
-					Snacks.picker.grep_buffers()
-				end,
-				desc = "Grep Open Buffers",
-			},
-			{
-				"<leader>sg",
-				function()
-					Snacks.picker.grep()
-				end,
-				desc = "Grep",
-			},
-			{
-				"<leader>sw",
-				function()
-					Snacks.picker.grep_word()
-				end,
-				desc = "Visual selection or word",
-				mode = { "n", "x" },
-			},
-			-- Other
-			{
-				"<leader>z",
-				function()
-					Snacks.zen()
-				end,
-				desc = "Toggle Zen Mode",
-			},
-			{
-				"<leader>gB",
-				function()
-					Snacks.gitbrowse()
-				end,
-				desc = "Git Browse",
-				mode = { "n", "v" },
-			},
-			{
-				"<leader>gg",
-				function()
-					Snacks.lazygit()
-				end,
-				desc = "Lazygit",
-			},
-			{
-				"]]",
-				function()
-					Snacks.words.jump(vim.v.count1)
-				end,
-				desc = "Next Reference",
-				mode = { "n", "t" },
-			},
-			{
-				"[[",
-				function()
-					Snacks.words.jump(-vim.v.count1)
-				end,
-				desc = "Prev Reference",
-				mode = { "n", "t" },
-			},
-			{
-				"<leader>N",
-				desc = "Neovim News",
-				function()
-					Snacks.win({
-						file = vim.api.nvim_get_runtime_file("doc/news.txt", false)[1],
-						width = 0.6,
-						height = 0.6,
-						wo = {
-							spell = false,
-							wrap = false,
-							signcolumn = "yes",
-							statuscolumn = " ",
-							conceallevel = 3,
-						},
-					})
-				end,
-			},
-		},
-		init = function()
-			vim.api.nvim_create_autocmd("User", {
-				pattern = "VeryLazy",
-				callback = function()
-					-- Setup some globals for debugging (lazy-loaded)
-					_G.dd = function(...)
-						Snacks.debug.inspect(...)
-					end
-					_G.bt = function()
-						Snacks.debug.backtrace()
-					end
-					vim.print = _G.dd -- Override print to use snacks for `:=` command
+  -- snacks type shit
+  {
+    'folke/snacks.nvim',
+    lazy = false,
+    priority = 1000,
+    ---@type snacks.Config
+    opts = {
+      bigfile = { enabled = true },
+      dashboard = { enabled = true },
+      indent = { enabled = true },
+      input = { enabled = true },
+      notifier = {
+        enabled = true,
+        timeout = 3000,
+      },
+      picker = { enabled = true },
+      quickfile = { enabled = true },
+      scope = { enabled = true },
+      statuscolumn = { enabled = true },
+      words = { enabled = true },
+      styles = {
+        notification = {
+          -- wo = { wrap = true } -- Wrap notifications
+        },
+      },
+    },
+    keys = {
+      -- git
+      {
+        '<leader>gb',
+        function()
+          Snacks.picker.git_branches()
+        end,
+        desc = 'Git Branches',
+      },
+      {
+        '<leader>gl',
+        function()
+          Snacks.picker.git_log()
+        end,
+        desc = 'Git Log',
+      },
+      {
+        '<leader>gL',
+        function()
+          Snacks.picker.git_log_line()
+        end,
+        desc = 'Git Log Line',
+      },
+      {
+        '<leader>gs',
+        function()
+          Snacks.picker.git_status()
+        end,
+        desc = 'Git Status',
+      },
+      {
+        '<leader>gS',
+        function()
+          Snacks.picker.git_stash()
+        end,
+        desc = 'Git Stash',
+      },
+      {
+        '<leader>gd',
+        function()
+          Snacks.picker.git_diff()
+        end,
+        desc = 'Git Diff (Hunks)',
+      },
+      {
+        '<leader>gf',
+        function()
+          Snacks.picker.git_log_file()
+        end,
+        desc = 'Git Log File',
+      },
+      -- Grep
+      {
+        '<leader>sb',
+        function()
+          Snacks.picker.lines()
+        end,
+        desc = 'Buffer Lines',
+      },
+      {
+        '<leader>sB',
+        function()
+          Snacks.picker.grep_buffers()
+        end,
+        desc = 'Grep Open Buffers',
+      },
+      {
+        '<leader>sg',
+        function()
+          Snacks.picker.grep()
+        end,
+        desc = 'Grep',
+      },
+      {
+        '<leader>sw',
+        function()
+          Snacks.picker.grep_word()
+        end,
+        desc = 'Visual selection or word',
+        mode = { 'n', 'x' },
+      },
+      -- Other
+      {
+        '<leader>z',
+        function()
+          Snacks.zen()
+        end,
+        desc = 'Toggle Zen Mode',
+      },
+      {
+        '<leader>gB',
+        function()
+          Snacks.gitbrowse()
+        end,
+        desc = 'Git Browse',
+        mode = { 'n', 'v' },
+      },
+      {
+        '<leader>gg',
+        function()
+          Snacks.lazygit()
+        end,
+        desc = 'Lazygit',
+      },
+      {
+        ']]',
+        function()
+          Snacks.words.jump(vim.v.count1)
+        end,
+        desc = 'Next Reference',
+        mode = { 'n', 't' },
+      },
+      {
+        '[[',
+        function()
+          Snacks.words.jump(-vim.v.count1)
+        end,
+        desc = 'Prev Reference',
+        mode = { 'n', 't' },
+      },
+      {
+        '<leader>N',
+        desc = 'Neovim News',
+        function()
+          Snacks.win {
+            file = vim.api.nvim_get_runtime_file('doc/news.txt', false)[1],
+            width = 0.6,
+            height = 0.6,
+            wo = {
+              spell = false,
+              wrap = false,
+              signcolumn = 'yes',
+              statuscolumn = ' ',
+              conceallevel = 3,
+            },
+          }
+        end,
+      },
+    },
+    init = function()
+      vim.api.nvim_create_autocmd('User', {
+        pattern = 'VeryLazy',
+        callback = function()
+          -- Setup some globals for debugging (lazy-loaded)
+          _G.dd = function(...)
+            Snacks.debug.inspect(...)
+          end
+          _G.bt = function()
+            Snacks.debug.backtrace()
+          end
+          vim.print = _G.dd -- Override print to use snacks for `:=` command
 
-					-- Create some toggle mappings
-					Snacks.toggle.option("spell", { name = "Spelling" }):map("<leader>us")
-					Snacks.toggle.option("wrap", { name = "Wrap" }):map("<leader>uw")
-					Snacks.toggle.option("relativenumber", { name = "Relative Number" }):map("<leader>uL")
-					Snacks.toggle.diagnostics():map("<leader>ud")
-					Snacks.toggle.line_number():map("<leader>ul")
-					Snacks.toggle
-						.option("conceallevel", { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2 })
-						:map("<leader>uc")
-					Snacks.toggle.treesitter():map("<leader>uT")
-					Snacks.toggle
-						.option("background", { off = "light", on = "dark", name = "Dark Background" })
-						:map("<leader>ub")
-					Snacks.toggle.inlay_hints():map("<leader>uh")
-					Snacks.toggle.indent():map("<leader>ug")
-					Snacks.toggle.dim():map("<leader>uD")
-				end,
-			})
-		end,
-	},
+          -- Create some toggle mappings
+          Snacks.toggle.option('spell', { name = 'Spelling' }):map '<leader>us'
+          Snacks.toggle.option('wrap', { name = 'Wrap' }):map '<leader>uw'
+          Snacks.toggle.option('relativenumber', { name = 'Relative Number' }):map '<leader>uL'
+          Snacks.toggle.diagnostics():map '<leader>ud'
+          Snacks.toggle.line_number():map '<leader>ul'
+          Snacks.toggle.option('conceallevel', { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2 }):map '<leader>uc'
+          Snacks.toggle.treesitter():map '<leader>uT'
+          Snacks.toggle.option('background', { off = 'light', on = 'dark', name = 'Dark Background' }):map '<leader>ub'
+          Snacks.toggle.inlay_hints():map '<leader>uh'
+          Snacks.toggle.indent():map '<leader>ug'
+          Snacks.toggle.dim():map '<leader>uD'
+        end,
+      })
+    end,
+  },
 
-	-- bracket autocomplete
-	{
-		"windwp/nvim-autopairs",
-		event = "InsertEnter",
-		config = true,
-	},
+  -- bracket autocomplete
+  {
+    'windwp/nvim-autopairs',
+    event = 'InsertEnter',
+    config = true,
+  },
 
-	-- typst preview
-	{
-		"chomosuke/typst-preview.nvim",
-		lazy = false,
-		version = "1.*",
-		opts = {},
-	},
+  -- typst preview
+  {
+    'chomosuke/typst-preview.nvim',
+    lazy = false,
+    version = '1.*',
+    opts = {},
+  },
 
-	-- mini
-	{ "echasnovski/mini.nvim", version = "*" },
+  -- mini
+  { 'echasnovski/mini.nvim', version = '*' },
 
-	-- file explorer
-	{
-		"nvim-tree/nvim-tree.lua",
-		version = "*",
-		lazy = false,
-		dependencies = {
-			"nvim-tree/nvim-web-devicons",
-		},
-		config = function()
-			require("nvim-tree").setup({})
-		end,
-	},
+  -- file explorer
+  {
+    'nvim-tree/nvim-tree.lua',
+    version = '*',
+    lazy = false,
+    dependencies = {
+      'nvim-tree/nvim-web-devicons',
+    },
+    config = function()
+      require('nvim-tree').setup {}
+    end,
+  },
 
-	-- markdown stuff
-	{
-		"tadmccorkle/markdown.nvim",
-		ft = "markdown", -- or 'event = "VeryLazy"'
-		opts = {
-			-- configuration here or empty for defaults
-		},
-	},
+  -- markdown stuff
+  {
+    'tadmccorkle/markdown.nvim',
+    ft = 'markdown', -- or 'event = "VeryLazy"'
+    opts = {
+      -- configuration here or empty for defaults
+    },
+  },
 
-	{
-		"MeanderingProgrammer/render-markdown.nvim",
-		dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" }, -- if you use the mini.nvim suite
-		---@module 'render-markdown'
-		---@type render.md.UserConfig
-		opts = {},
-	},
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' }, -- if you use the mini.nvim suite
+    ---@module 'render-markdown'
+    ---@type render.md.UserConfig
+    opts = {},
+  },
 
-	-- catppuccin if i want
-	{ "catppuccin/nvim", name = "catppuccin", priority = 1000 },
+  -- catppuccin if i want
+  { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
 
-	-- tabs
-	{
-		"romgrk/barbar.nvim",
-		dependencies = {
-			"lewis6991/gitsigns.nvim", -- OPTIONAL: for git status
-			"nvim-tree/nvim-web-devicons", -- OPTIONAL: for file icons
-		},
-		init = function()
-			vim.g.barbar_auto_setup = false
-		end,
-		opts = {
-			-- lazy.nvim will automatically call setup for you. put your options here, anything missing will use the default:
-			-- animation = true,
-			-- insert_at_start = true,
-			-- …etc.
-		},
-		version = "^1.0.0", -- optional: only update when a new 1.x version is released
-	},
+  -- tabs
+  {
+    'romgrk/barbar.nvim',
+    dependencies = {
+      'lewis6991/gitsigns.nvim', -- OPTIONAL: for git status
+      'nvim-tree/nvim-web-devicons', -- OPTIONAL: for file icons
+    },
+    init = function()
+      vim.g.barbar_auto_setup = false
+    end,
+    opts = {
+      -- lazy.nvim will automatically call setup for you. put your options here, anything missing will use the default:
+      -- animation = true,
+      -- insert_at_start = true,
+      -- …etc.
+    },
+    version = '^1.0.0', -- optional: only update when a new 1.x version is released
+  },
 
-	-- Coq support lets hope this works
-	{
-		"whonore/Coqtail",
-		init = function()
-			vim.g.loaded_coqtail = 1
-			vim.g["coqtail#supported"] = 0
-		end,
-	},
-	{
-		"tomtomjhj/vscoq.nvim",
-		filetypes = "coq",
-		dependencies = {
-			"neovim/nvim-lspconfig",
-			"whonore/Coqtail",
-		},
-		opts = {
-			vscoq = {
-				path = "/home/aadi/.opam/CP.2024.10.1~8.19~2024.10/bin/vscoqtop",
-			},
-			lsp = {
-				on_attach = function(client, bufnr)
-					-- In manual mode, use ctrl-alt-{j,k,l} to step.
-					vim.keymap.set(
-						{ "n", "i" },
-						"<M-j>",
-						"<Cmd>VsCoq stepForward<CR>",
-						{ buffer = bufnr, desc = "VsCoq step forward" }
-					)
-					vim.keymap.set(
-						{ "n", "i" },
-						"<M-k>",
-						"<Cmd>VsCoq stepBackward<CR>",
-						{ buffer = bufnr, desc = "VsCoq step backward" }
-					)
-					vim.keymap.set(
-						{ "n", "i" },
-						"<M-l>",
-						"<Cmd>VsCoq interpretToPoint<CR>",
-						{ buffer = bufnr, desc = "VsCoq interpret to point" }
-					)
-				end,
-			},
-		},
-	},
+  -- Coq support lets hope this works
+  {
+    'whonore/Coqtail',
+    init = function()
+      vim.g.loaded_coqtail = 1
+      vim.g['coqtail#supported'] = 0
+    end,
+  },
+  {
+    'tomtomjhj/vscoq.nvim',
+    filetypes = 'coq',
+    dependencies = {
+      'neovim/nvim-lspconfig',
+      'whonore/Coqtail',
+    },
+    opts = {
+      vscoq = {
+        path = '/home/aadi/.opam/CP.2024.10.1~8.19~2024.10/bin/vscoqtop',
+      },
+      lsp = {
+        on_attach = function(client, bufnr)
+          -- In manual mode, use ctrl-alt-{j,k,l} to step.
+          vim.keymap.set({ 'n', 'i' }, '<M-j>', '<Cmd>VsCoq stepForward<CR>', { buffer = bufnr, desc = 'VsCoq step forward' })
+          vim.keymap.set({ 'n', 'i' }, '<M-k>', '<Cmd>VsCoq stepBackward<CR>', { buffer = bufnr, desc = 'VsCoq step backward' })
+          vim.keymap.set({ 'n', 'i' }, '<M-l>', '<Cmd>VsCoq interpretToPoint<CR>', { buffer = bufnr, desc = 'VsCoq interpret to point' })
+        end,
+      },
+    },
+  },
+  -- tabs
+  {
+    'romgrk/barbar.nvim',
+    dependencies = {
+      'lewis6991/gitsigns.nvim', -- OPTIONAL: for git status
+      'nvim-tree/nvim-web-devicons', -- OPTIONAL: for file icons
+    },
+    init = function()
+      vim.g.barbar_auto_setup = false
+    end,
+    opts = {
+      -- lazy.nvim will automatically call setup for you. put your options here, anything missing will use the default:
+      -- animation = true,
+      -- insert_at_start = true,
+      -- …etc.
+    },
+    version = '^1.0.0', -- optional: only update when a new 1.x version is released
+  },
 
-	-- flash.nvim
-	{
-		"folke/flash.nvim",
-		event = "VeryLazy",
-		---@type Flash.Config
-		opts = {},
+  -- flash.nvim
+  {
+    'folke/flash.nvim',
+    event = 'VeryLazy',
+    ---@type Flash.Config
+    opts = {},
   -- stylua: ignore
   keys = {
     { "s", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
@@ -331,73 +330,153 @@ return {
     -- { "R", mode = { "o", "x" }, function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
     { "<c-s>", mode = { "c" }, function() require("flash").toggle() end, desc = "Toggle Flash Search" },
   },
-	},
+  },
 
-	-- symbols
-	{
-		"oskarrrrrrr/symbols.nvim",
-		config = function()
-			local r = require("symbols.recipes")
-			require("symbols").setup(r.DefaultFilters, r.AsciiSymbols, {
-				-- custom settings here
-				-- e.g. hide_cursor = false
-			})
-			vim.keymap.set("n", ",s", "<cmd> Symbols<CR>")
-		end,
-	},
+  -- symbols
+  {
+    'oskarrrrrrr/symbols.nvim',
+    config = function()
+      local r = require 'symbols.recipes'
+      require('symbols').setup(r.DefaultFilters, r.AsciiSymbols, {
+        -- custom settings here
+        -- e.g. hide_cursor = false
+      })
+      vim.keymap.set('n', ',s', '<cmd> Symbols<CR>')
+    end,
+  },
 
-	-- autosave
-	{
-		"brianhuster/autosave.nvim",
-		event = "InsertEnter",
-		opts = {}, -- Configuration here
-	},
+  -- autosave
+  {
+    'brianhuster/autosave.nvim',
+    event = 'InsertEnter',
+    opts = {}, -- Configuration here
+  },
 
-	-- diagnostics
-	{
-		"folke/trouble.nvim",
-		opts = {}, -- for default options, refer to the configuration section for custom setup.
-		cmd = "Trouble",
-		keys = {
-			{
-				"<leader>xx",
-				"<cmd>Trouble diagnostics toggle<cr>",
-				desc = "Diagnostics (Trouble)",
-			},
-			{
-				"<leader>xX",
-				"<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
-				desc = "Buffer Diagnostics (Trouble)",
-			},
-			{
-				"<leader>cs",
-				"<cmd>Trouble symbols toggle focus=false<cr>",
-				desc = "Symbols (Trouble)",
-			},
-			{
-				"<leader>cl",
-				"<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
-				desc = "LSP Definitions / references / ... (Trouble)",
-			},
-			{
-				"<leader>xL",
-				"<cmd>Trouble loclist toggle<cr>",
-				desc = "Location List (Trouble)",
-			},
-			{
-				"<leader>xQ",
-				"<cmd>Trouble qflist toggle<cr>",
-				desc = "Quickfix List (Trouble)",
-			},
-		},
-	},
+  -- diagnostics
+  {
+    'folke/trouble.nvim',
+    opts = {}, -- for default options, refer to the configuration section for custom setup.
+    cmd = 'Trouble',
+    keys = {
+      {
+        '<leader>xx',
+        '<cmd>Trouble diagnostics toggle<cr>',
+        desc = 'Diagnostics (Trouble)',
+      },
+      {
+        '<leader>xX',
+        '<cmd>Trouble diagnostics toggle filter.buf=0<cr>',
+        desc = 'Buffer Diagnostics (Trouble)',
+      },
+      {
+        '<leader>cs',
+        '<cmd>Trouble symbols toggle focus=false<cr>',
+        desc = 'Symbols (Trouble)',
+      },
+      {
+        '<leader>cl',
+        '<cmd>Trouble lsp toggle focus=false win.position=right<cr>',
+        desc = 'LSP Definitions / references / ... (Trouble)',
+      },
+      {
+        '<leader>xL',
+        '<cmd>Trouble loclist toggle<cr>',
+        desc = 'Location List (Trouble)',
+      },
+      {
+        '<leader>xQ',
+        '<cmd>Trouble qflist toggle<cr>',
+        desc = 'Quickfix List (Trouble)',
+      },
+    },
+  },
 
-	-- persistence
-	{
-		"folke/persistence.nvim",
-		event = "BufReadPre", -- this will only start session saving when an actual file was opened
-		opts = {
-			-- add any custom options here
-		},
-	},
+  -- persistence
+  {
+    'folke/persistence.nvim',
+    event = 'BufReadPre', -- this will only start session saving when an actual file was opened
+    opts = {
+      -- add any custom options here
+    },
+  },
+
+  'obsidian-nvim/obsidian.nvim',
+  version = '*', -- recommended, use latest release instead of latest commit
+  lazy = true,
+  ft = 'markdown',
+  -- Replace the above line with this if you only want to load obsidian.nvim for markdown files in your vault:
+  -- event = {
+  --   -- If you want to use the home shortcut '~' here you need to call 'vim.fn.expand'.
+  --   -- E.g. "BufReadPre " .. vim.fn.expand "~" .. "/my-vault/*.md"
+  --   -- refer to `:h file-pattern` for more examples
+  --   "BufReadPre path/to/my-vault/*.md",
+  --   "BufNewFile path/to/my-vault/*.md",
+  -- },
+  dependencies = {
+    -- Required.
+    'nvim-lua/plenary.nvim',
+
+    -- see below for full list of optional dependencies 👇
+  },
+  opts = {
+    workspaces = {
+      {
+        name = 'personal',
+        path = '~/Documents/obsidian-vaults/',
+      },
+    },
+
+    -- Optional, completion of wiki links, local markdown links, and tags using nvim-cmp.
+    completion = {
+      -- Enables completion using nvim_cmp
+      nvim_cmp = true,
+      -- Enables completion using blink.cmp
+      blink = false,
+      -- Trigger completion at 2 chars.
+      min_chars = 2,
+    },
+
+    mappings = {
+      -- Overrides the 'gf' mapping to work on markdown/wiki links within your vault.
+      ['gf'] = {
+        action = function()
+          return require('obsidian').util.gf_passthrough()
+        end,
+        opts = { noremap = false, expr = true, buffer = true },
+      },
+      -- Toggle check-boxes.
+      ['<leader>ch'] = {
+        action = function()
+          return require('obsidian').util.toggle_checkbox()
+        end,
+        opts = { buffer = true },
+      },
+      -- Smart action depending on context: follow link, show notes with tag, or toggle checkbox.
+      ['<cr>'] = {
+        action = function()
+          return require('obsidian').util.smart_action()
+        end,
+        opts = { buffer = true, expr = true },
+      },
+    },
+
+    picker = {
+      -- Set your preferred picker. Can be one of 'telescope.nvim', 'fzf-lua', 'mini.pick' or 'snacks.pick'.
+      name = 'telescope.nvim',
+      -- Optional, configure key mappings for the picker. These are the defaults.
+      -- Not all pickers support all mappings.
+      note_mappings = {
+        -- Create a new note from your query.
+        new = '<C-x>',
+        -- Insert a link to the selected note.
+        insert_link = '<C-l>',
+      },
+      tag_mappings = {
+        -- Add tag(s) to current note.
+        tag_note = '<C-x>',
+        -- Insert a tag at the current location.
+        insert_tag = '<C-l>',
+      },
+    },
+  },
 }
