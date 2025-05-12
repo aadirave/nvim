@@ -161,6 +161,9 @@ vim.opt.scrolloff = 10
 -- See `:help 'confirm'`
 vim.opt.confirm = true
 
+vim.g.tabstop = 2
+vim.cmd 'set tabstop=2'
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -834,7 +837,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = false, cpp = false }
+        local disable_filetypes = { c = false, cpp = false, md = false }
         local lsp_format_opt
         if disable_filetypes[vim.bo[bufnr].filetype] then
           lsp_format_opt = 'never'
@@ -849,6 +852,7 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         typst = { 'typstfmt' },
+        markdown = { 'mdslw' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -1127,9 +1131,6 @@ vim.api.nvim_create_autocmd('BufReadPost', {
   end,
 })
 
-vim.g.tabstop = 2
-vim.cmd 'set tabstop=2'
-
 vim.api.nvim_create_user_command('Google', function(o)
   --local escaped = require('socket.url'.escape(o.args)
   local escaped = vim.uri_encode(o.args)
@@ -1139,3 +1140,6 @@ end, { nargs = 1, desc = 'just google it' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+vim.g.tabstop = 2
+vim.cmd 'set tabstop=2'
