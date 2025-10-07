@@ -557,7 +557,7 @@ require("lazy").setup({
 			local cond = require("nvim-autopairs.conds")
 
 			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "latex", "typst" },
+				ensure_installed = { "typst" },
 				highlight = { enable = true },
 			})
 
@@ -811,13 +811,13 @@ require("lazy").setup({
 			-- for you, so that they are available from within Neovim.
 			local ensure_installed = vim.tbl_keys(servers or {})
 			vim.list_extend(ensure_installed, {
-				"stylua", -- Used to format Lua code
+				"stylua",
 			})
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 			require("mason-lspconfig").setup({
 				ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-				automatic_installation = false,
+				automatic_installation = true,
 				handlers = {
 					function(server_name)
 						local server = servers[server_name] or {}
@@ -1177,3 +1177,30 @@ end, { nargs = 1, desc = "just google it" })
 
 vim.g.tabstop = 2
 vim.cmd("set tabstop=2")
+
+local lspconfig = require("lspconfig")
+lspconfig.clangd.setup({
+	on_attach = function(client, bufnr)
+		local options = { noremap = true, silent = true, buffer = bufnr }
+		vim.keymap.set("n", "gD", vim.lsp.buf.declaration, options)
+		vim.keymap.set("n", "gd", vim.lsp.buf.definition, options)
+		vim.keymap.set("n", "K", vim.lsp.buf.hover, options)
+		vim.keymap.set("n", "gi", vim.lsp.buf.implementation, options)
+		vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, options)
+		vim.keymap.set("n", "<space>wa", vim.lsp.buf.add_workspace_folder, options)
+		vim.keymap.set("n", "<space>wr", vim.lsp.buf.remove_workspace_folder, options)
+		vim.keymap.set("n", "<space>wl", function()
+			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+		end, options)
+		vim.keymap.set("n", "<space>D", vim.lsp.buf.type_definition, options)
+		vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename, options)
+		vim.keymap.set("n", "<space>ca", vim.lsp.buf.code_action, options)
+		vim.keymap.set("n", "gr", vim.lsp.buf.references, options)
+		vim.keymap.set("n", "<space>f", function()
+			vim.lsp.buf.format({ async = true })
+		end, options)
+
+		print("clangd attached to buffer: " .. bufnr .. " with client: " .. client.id)
+	end,
+	capabilities = require("cmp_nvim_lsp").default_capabilities(), -- If using nvim-cmp for completion
+})
