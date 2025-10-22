@@ -465,13 +465,13 @@ require("lazy").setup({
 			vim.keymap.set("n", "<leader><leader>", builtin.buffers, { desc = "[ ] Find existing buffers" })
 
 			-- Slightly advanced example of overriding default behavior and theme
-			vim.keymap.set("n", "<leader>/", function()
-				-- You can pass additional configuration to Telescope to change the theme, layout, etc.
-				builtin.current_buffer_fuzzy_find(require("telescope.themes").get_dropdown({
-					winblend = 10,
-					previewer = false,
-				}))
-			end, { desc = "[/] Fuzzily search in current buffer" })
+			-- vim.keymap.set("n", "<leader>/", function()
+			-- 	-- You can pass additional configuration to Telescope to change the theme, layout, etc.
+			-- 	builtin.current_buffer_fuzzy_find(require("telescope.themes").get_dropdown({
+			-- 		winblend = 10,
+			-- 		previewer = false,
+			-- 	}))
+			-- end, { desc = "[/] Fuzzily search in current buffer" })
 
 			-- It's also possible to pass additional configuration options.
 			--  See `:help telescope.builtin.live_grep()` for information about particular keys
@@ -602,6 +602,8 @@ require("lazy").setup({
 					-- WARN: This is not Goto Definition, this is Goto Declaration.
 					--  For example, in C this would take you to the header.
 					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
+
+					map("K", vim.lsp.buf.hover, "Hover Docs")
 
 					-- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
 					---@param client vim.lsp.Client
