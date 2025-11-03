@@ -603,7 +603,7 @@ require("lazy").setup({
 					--  For example, in C this would take you to the header.
 					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
 
-					map("K", vim.lsp.buf.hover, "Hover Docs")
+					vim.keymap.set("n", "K", vim.lsp.buf.hover, { buffer = event.buf, desc = "LSP Hover" })
 
 					-- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
 					---@param client vim.lsp.Client
@@ -741,6 +741,7 @@ require("lazy").setup({
 						},
 					},
 				},
+				ocamllsp = {},
 			}
 
 			-- Ensure the servers and tools above are installed
@@ -1093,5 +1094,36 @@ end, { nargs = 1, desc = "just google it" })
 vim.g.tabstop = 2
 vim.cmd("set tabstop=2")
 
-vim.lsp.config["ocamllsp"] = {}
+-- local on_attach = function(client, bufnr)
+-- 	-- This is the key line you need:
+-- 	-- 'n' = normal mode
+-- 	-- 'K' = the key to press
+-- 	-- 'vim.lsp.buf.hover' = the LSP function to call
+-- 	-- { buffer = bufnr } = make this mapping local to the current buffer
+-- 	vim.keymap.set("n", "K", vim.lsp.buf.hover, { buffer = bufnr, desc = "LSP Hover" })
+--
+-- 	-- You might also have other mappings here, like:
+-- 	-- vim.keymap.set("n", "gd", vim.lsp.buf.definition, { buffer = bufnr, desc = "Go to Definition" })
+-- 	-- vim.keymap.set("n", "gi", vim.lsp.buf.implementation, { buffer = bufnr, desc = "Go to Implementation" })
+-- 	-- vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { buffer = bufnr, desc = "Code Action" })
+-- end
+
+-- Then, when you set up your OCaml LSP (or any other LSP),
+-- you pass this on_attach function:
+-- local lspconfig = require("lspconfig")
+--
+-- lspconfig["ocamllsp"].setup({
+-- 	on_attach = on_attach,
+-- 	-- other settings...
+-- })
+
+vim.lsp.config("ocamllsp", {
+	-- Add any server-specific settings here, if you have them.
+	-- You don't need to pass on_attach or capabilities.
+	settings = {
+		-- example_setting = true
+	},
+})
+vim.lsp.enable("ocamllsp")
+
 vim.lsp.inlay_hint.enable(true)
