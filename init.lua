@@ -741,7 +741,6 @@ require("lazy").setup({
 						},
 					},
 				},
-				ocamllsp = {},
 			}
 
 			-- Ensure the servers and tools above are installed
@@ -814,7 +813,7 @@ require("lazy").setup({
 			end,
 			formatters_by_ft = {
 				lua = { "stylua" },
-				typst = { "typstfmt" },
+				typst = { "prettypst" },
 				markdown = { "mdslw" },
 				nix = { "nixfmt" },
 				ocaml = { "ocamlformat" },
@@ -1127,3 +1126,17 @@ vim.lsp.config("ocamllsp", {
 vim.lsp.enable("ocamllsp")
 
 vim.lsp.inlay_hint.enable(true)
+
+require("tiny-inline-diagnostic").setup({
+	options = {
+		multilines = {
+			enabled = true,
+		},
+		show_source = {
+			enabled = true,
+		},
+		add_messages = {
+			display_count = true,
+		},
+	},
+})
