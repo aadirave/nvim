@@ -260,7 +260,7 @@ return {
 		end,
 	},
 	{
-		"tomtomjhj/vscoq.nvim",
+		"tomtomjhj/vsrocq.nvim",
 		filetypes = "coq",
 		dependencies = {
 			"neovim/nvim-lspconfig",
