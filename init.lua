@@ -813,7 +813,6 @@ require("lazy").setup({
 			end,
 			formatters_by_ft = {
 				lua = { "stylua" },
-				typst = { "prettypst" },
 				markdown = { "mdslw" },
 				nix = { "nixfmt" },
 				ocaml = { "ocamlformat" },
@@ -1140,3 +1139,20 @@ require("tiny-inline-diagnostic").setup({
 		},
 	},
 })
+
+-- autopairs config
+
+local Rule = require("nvim-autopairs.rule")
+local npairs = require("nvim-autopairs")
+
+npairs.add_rule(Rule("$", "$", { "typ", "typst" }))
+npairs.add_rule(Rule("*", "*", { "typ", "typst" }))
+npairs.add_rule(Rule("_", "_", { "typ", "typst" }))
+
+-- typst autoformat
+
+vim.lsp.config["tinymist"] = {
+	cmd = { "tinymist" },
+	filetypes = { "typst" },
+	settings = { formatterMode = "typstfmt", formatterPrintWidth = 80, formatterProseWrap = true },
+}
