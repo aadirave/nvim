@@ -995,34 +995,29 @@ require("lazy").setup({
 	{ -- Highlight, edit, and navigate code
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
-		main = "nvim-treesitter.configs", -- Sets main module to use for opts
-		-- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-		opts = {
-			ensure_installed = {
-				"bash",
-				"c",
-				"diff",
-				"html",
-				"lua",
-				"luadoc",
-				"markdown",
-				"markdown_inline",
-				"query",
-				"vim",
-				"vimdoc",
-				"ocaml",
-			},
-			-- Autoinstall languages that are not installed
-			auto_install = true,
-			highlight = {
-				enable = true,
-				-- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-				--  If you are experiencing weird indenting issues, add the language to
-				--  the list of additional_vim_regex_highlighting and disabled languages for indent.
-				additional_vim_regex_highlighting = { "ruby" },
-			},
-			indent = { enable = true, disable = { "ruby" } },
-		},
+		config = function()
+			require("nvim-treesitter.config").setup({
+				ensure_installed = {
+					"bash",
+					"c",
+					"diff",
+					"html",
+					"lua",
+					"luadoc",
+					"markdown",
+					"markdown_inline",
+					"query",
+					"vim",
+					"vimdoc",
+					"ocaml",
+				},
+				automatic_installation = true,
+				highlight = {
+					enabled = true,
+				},
+				indent = { enabled = true },
+			})
+		end,
 		-- There are additional nvim-treesitter modules that you can use to interact
 		-- with nvim-treesitter. You should go explore a few and see what interests you:
 		--
@@ -1141,6 +1136,17 @@ require("tiny-inline-diagnostic").setup({
 	},
 })
 
+vim.lsp.config("pylsp", {
+	settings = {
+		pylsp = {
+			plugins = {
+				pylsp_mypy = { enabled = true },
+				jedi_completion = { fuzzy = true },
+			},
+		},
+	},
+})
+
 -- autopairs config
 
 local Rule = require("nvim-autopairs.rule")
@@ -1158,3 +1164,22 @@ vim.lsp.config["tinymist"] = {
 	filetypes = { "typst" },
 	settings = { formatterMode = "typstfmt", formatterPrintWidth = 80, formatterProseWrap = true },
 }
+
+vim.api.nvim_create_autocmd("User", {
+	pattern = "TSUpdate",
+	callback = function()
+		require("nvim-treesitter.parsers").comment = {
+			install_info = {
+				url = "https://github.com/OXY2DEV/tree-sitter-comment",
+				branch = "main",
+
+				-- Also installs the query files(*syntax highlighting*), Only for the `main` branch of `nvim-treesitter`.
+				queries = "queries/",
+			},
+		}
+	end,
+})
+
+if vim.g.neovide then
+	vim.o.guifont = "Jetbrains Mono Nerd Font:h12"
+end
