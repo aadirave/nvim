@@ -1156,3 +1156,16 @@ vim.lsp.config["tinymist"] = {
 	filetypes = { "typst" },
 	settings = { formatterMode = "typstfmt", formatterPrintWidth = 80, formatterProseWrap = true },
 }
+
+-- Custom highlight for comments (from Reddit fix)
+vim.api.nvim_create_autocmd("VimEnter", {
+	desc = "Make comments dark grey and bold",
+	pattern = "*",
+	callback = function()
+		vim.api.nvim_set_hl(0, "Comment", {
+			fg = "#a9a9a9", -- This is a standard 'DarkGrey' hex code
+			bold = true,
+			ctermfg = "DarkGrey",
+		})
+	end,
+})
