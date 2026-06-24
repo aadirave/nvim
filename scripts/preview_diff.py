@@ -11,24 +11,41 @@ def main():
     stage = sys.argv[1] # "pre" or "post"
     nvim_addr = os.environ.get("NVIM")
     if not nvim_addr:
+        try:
+            with open("/tmp/antigravity_nvim_socket", "r") as f:
+                nvim_addr = f.read().strip()
+        except Exception:
+            pass
+            
+    if not nvim_addr:
         sys.exit(0)
 
     if stage == "post":
-        cmd = "<cmd>AntigravityCloseProposedDiff<cr>"
+        expr = "v:lua.AntigravityCloseProposedDiff()"
         try:
-            subprocess.run(["nvim", "--server", nvim_addr, "--remote-send", cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["nvim", "--server", nvim_addr, "--remote-expr", expr], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception:
             pass
         sys.exit(0)
 
     if stage == "pre":
+        import traceback
         try:
-            data = json.load(sys.stdin)
-        except Exception:
+            raw_stdin = sys.stdin.read()
+            with open("/tmp/hook_log.txt", "w") as f:
+                f.write(f"RAW STDIN: {raw_stdin}\n")
+            data = json.loads(raw_stdin)
+        except Exception as e:
+            with open("/tmp/hook_log.txt", "a") as f:
+                f.write(f"JSON ERROR: {e}\n{traceback.format_exc()}\n")
             sys.exit(0)
 
-        tool_name = data.get("toolName") or data.get("tool_name")
-        tool_input = data.get("toolInput") or data.get("tool_input") or {}
+        tool_call = data.get("toolCall", {})
+        tool_name = data.get("toolName") or data.get("tool_name") or tool_call.get("name")
+        tool_input = data.get("toolInput") or data.get("tool_input") or tool_call.get("args") or {}
+        
+        with open("/tmp/hook_log.txt", "a") as f:
+            f.write(f"TOOL NAME: {tool_name}\nTOOL INPUT KEYS: {list(tool_input.keys()) if tool_input else 'None'}\n")
 
         if not tool_name or not tool_input:
             sys.exit(0)
@@ -82,10 +99,12 @@ def main():
         except Exception:
             sys.exit(0)
 
-        # Send remote command to Neovim
-        cmd = f"<cmd>AntigravityShowProposedDiff {target_file} {temp_file}<cr>"
+        # Send remote command to Neovim via safe API call (remote-expr) to avoid key-injection issues in terminal mode
+        escaped_target = target_file.replace("'", "\\'")
+        escaped_temp = temp_file.replace("'", "\\'")
+        expr = f"v:lua.AntigravityShowProposedDiff('{escaped_target}', '{escaped_temp}')"
         try:
-            subprocess.run(["nvim", "--server", nvim_addr, "--remote-send", cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["nvim", "--server", nvim_addr, "--remote-expr", expr], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception:
             pass
 

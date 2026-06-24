@@ -1,6 +1,6 @@
 local M = {
 	"antigravity",
-	-- Test comment to verify live diff preview functionality
+	-- Verification comment: remote-expr diff preview is active
 	dir = vim.fn.stdpath("config"),
 	lazy = false,
 	priority = 100,
@@ -151,13 +151,18 @@ local function get_file_info()
 end
 
 M.config = function()
-	-- Define user commands
-	vim.api.nvim_create_user_command("AntigravityShowProposedDiff", function(opts)
-		local args = vim.split(opts.args, " ")
-		if #args < 2 then return end
-		local target_file = args[1]
-		local temp_file = args[2]
+	-- Save servername for the preview script to use if environment variable is missing
+	local servername = vim.v.servername
+	if servername then
+		local f = io.open("/tmp/antigravity_nvim_socket", "w")
+		if f then
+			f:write(servername)
+			f:close()
+		end
+	end
 
+	-- Expose global functions for safe remote RPC invocation via remote-expr (prevents keyboard-injection issues in terminal mode)
+	_G.AntigravityShowProposedDiff = function(target_file, temp_file)
 		-- Ensure we open target_file in a main code window (not the terminal pane window)
 		local current_tab = vim.api.nvim_get_current_tabpage()
 		local wins = vim.api.nvim_tabpage_list_wins(current_tab)
@@ -200,9 +205,9 @@ M.config = function()
 		vim.cmd("diffthis")
 		vim.cmd("wincmd p") -- go back to main window
 		vim.cmd("diffthis")
-	end, { nargs = "*" })
+	end
 
-	vim.api.nvim_create_user_command("AntigravityCloseProposedDiff", function()
+	_G.AntigravityCloseProposedDiff = function()
 		-- Turn off diff
 		vim.cmd("diffoff!")
 		-- Find any open window with temporary buffer and close it
@@ -215,6 +220,17 @@ M.config = function()
 				pcall(vim.api.nvim_win_close, w, true)
 			end
 		end
+	end
+
+	-- Define user commands
+	vim.api.nvim_create_user_command("AntigravityShowProposedDiff", function(opts)
+		local args = vim.split(opts.args, " ")
+		if #args < 2 then return end
+		_G.AntigravityShowProposedDiff(args[1], args[2])
+	end, { nargs = "*" })
+
+	vim.api.nvim_create_user_command("AntigravityCloseProposedDiff", function()
+		_G.AntigravityCloseProposedDiff()
 	end, {})
 
 	vim.api.nvim_create_user_command("AntigravityChat", function()
