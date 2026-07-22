@@ -165,13 +165,14 @@ M.config = function()
 	end
 
 	-- Tracks the windows we create for a proposed-diff so we can tear them down
-	-- again without disturbing the rest of the user's layout.
+	-- again and restore the exact previous layout.
 	local diff_state = {
 		before_win = nil,
 		after_win = nil,
 		created_before = false,
-		origin_win = nil, -- window focus came from (usually the Claude terminal)
-		origin_width = nil, -- its width, so we can restore it afterwards
+		host_win = nil, -- editor window we reused for the "before" side (if any)
+		host_prev_buf = nil, -- buffer that host_win showed before we hijacked it
+		saved_sizes = nil, -- { [win_id] = { width, height } } snapshot to restore
 	}
 
 	-- True only when we actually have a Claude proposed-diff on screen.
@@ -188,8 +189,8 @@ M.config = function()
 		return false
 	end
 
-	-- Run window juggling with redraws batched so the layout appears in one paint
-	-- instead of flickering through intermediate states.
+	-- Run window juggling with redraws batched so the layout appears in one
+	-- paint instead of flickering through intermediate states.
 	local function without_flicker(fn)
 		local save_lz = vim.o.lazyredraw
 		vim.o.lazyredraw = true
@@ -198,6 +199,24 @@ M.config = function()
 		vim.cmd("redraw")
 		if not ok then
 			error(err)
+		end
+	end
+
+	-- Restore each snapshotted window to its saved size. Two passes because
+	-- resizing one window nudges its neighbours; the second pass converges. Run
+	-- this only while 'equalalways' sits at its normal value -- toggling that
+	-- option re-equalizes and would undo the restore.
+	local function restore_sizes(skip_win)
+		if not diff_state.saved_sizes then
+			return
+		end
+		for _ = 1, 2 do
+			for w, wh in pairs(diff_state.saved_sizes) do
+				if w ~= skip_win and vim.api.nvim_win_is_valid(w) then
+					pcall(vim.api.nvim_win_set_width, w, wh[1])
+					pcall(vim.api.nvim_win_set_height, w, wh[2])
+				end
+			end
 		end
 	end
 
@@ -222,11 +241,14 @@ M.config = function()
 			if diff_state.after_win and vim.api.nvim_win_is_valid(diff_state.after_win) then
 				pcall(vim.api.nvim_win_close, diff_state.after_win, true)
 			end
-			-- Close the "before" window only if we created it ourselves (i.e. there
-			-- was no spare editor window to reuse). Never close a window the user
-			-- already had open.
-			if diff_state.created_before and diff_state.before_win and vim.api.nvim_win_is_valid(diff_state.before_win) then
-				pcall(vim.api.nvim_win_close, diff_state.before_win, true)
+			-- Close the "before" window only if we created it ourselves. If we
+			-- reused an existing editor window, restore the buffer it had before.
+			if diff_state.created_before then
+				if diff_state.before_win and vim.api.nvim_win_is_valid(diff_state.before_win) then
+					pcall(vim.api.nvim_win_close, diff_state.before_win, true)
+				end
+			elseif diff_state.host_win and vim.api.nvim_win_is_valid(diff_state.host_win) and diff_state.host_prev_buf and vim.api.nvim_buf_is_valid(diff_state.host_prev_buf) then
+				pcall(vim.api.nvim_win_set_buf, diff_state.host_win, diff_state.host_prev_buf)
 			end
 
 			-- Safety net: close any lingering proposed buffers by name.
@@ -237,25 +259,30 @@ M.config = function()
 				end
 			end
 
-			-- Give the terminal back its original width.
-			if diff_state.origin_win and vim.api.nvim_win_is_valid(diff_state.origin_win) and diff_state.origin_width then
-				pcall(vim.api.nvim_win_set_width, diff_state.origin_win, diff_state.origin_width)
-			end
+			-- Restore the exact window sizes we started with (equalalways is at
+			-- its normal value here, so these stick).
+			restore_sizes(nil)
 		end)
 
 		diff_state.before_win, diff_state.after_win, diff_state.created_before = nil, nil, false
-		diff_state.origin_win, diff_state.origin_width = nil, nil
+		diff_state.host_win, diff_state.host_prev_buf, diff_state.saved_sizes = nil, nil, nil
 	end
 
 	local function show_proposed_diff(target_file, temp_file)
 		-- Remember where focus started (typically the Claude terminal) so we can
-		-- return to it and restore its width — the diff is a passive preview, the
-		-- approval prompt lives in the terminal.
+		-- return to it — the diff is a passive preview, the approval prompt lives
+		-- in the terminal.
 		local origin_win = vim.api.nvim_get_current_win()
-		local origin_width = vim.api.nvim_win_is_valid(origin_win) and vim.api.nvim_win_get_width(origin_win) or nil
 
 		-- Clear any previous proposed-diff before opening a new one.
 		close_proposed_diff()
+
+		-- Snapshot every window's size (keyed by stable window id) so we can
+		-- restore the exact layout on teardown.
+		diff_state.saved_sizes = {}
+		for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+			diff_state.saved_sizes[w] = { vim.api.nvim_win_get_width(w), vim.api.nvim_win_get_height(w) }
+		end
 
 		without_flicker(function()
 			-- Find a normal file window to host the "before" side. Skip the origin
@@ -272,6 +299,8 @@ M.config = function()
 			end
 
 			if host then
+				diff_state.host_win = host
+				diff_state.host_prev_buf = vim.api.nvim_win_get_buf(host)
 				vim.api.nvim_set_current_win(host)
 				vim.cmd("edit " .. vim.fn.fnameescape(target_file))
 				diff_state.created_before = false
@@ -296,14 +325,13 @@ M.config = function()
 			vim.cmd("diffthis") -- AFTER on the right
 			diff_state.after_win = after_win
 
-			-- Remember the terminal + restore its original width so opening the
-			-- diff doesn't shrink it. Only when it was already a sized split next
-			-- to an editor -- in the terminal-only case there's no spare room, so
-			-- forcing full width would collapse the diff windows.
-			diff_state.origin_win = origin_win
-			diff_state.origin_width = (not diff_state.created_before) and origin_width or nil
-			if vim.api.nvim_win_is_valid(origin_win) and diff_state.origin_width then
-				pcall(vim.api.nvim_win_set_width, origin_win, diff_state.origin_width)
+			-- Keep every pre-existing window (terminal, other editors) at its
+			-- original size so opening the diff doesn't shrink them; before/after
+			-- absorb the host window's space instead. Skipped in the terminal-only
+			-- case (created_before) -- there is no spare room, so the windows must
+			-- share and forcing the terminal to full width would collapse the diff.
+			if not diff_state.created_before then
+				restore_sizes(diff_state.before_win)
 			end
 
 			-- Hand focus back to the Claude terminal so you can approve/deny in place.
