@@ -164,66 +164,171 @@ M.config = function()
 		end
 	end
 
-	-- Expose global functions for safe remote RPC invocation via remote-expr
-	-- (prevents keyboard-injection issues in terminal mode)
+	-- Tracks the windows we create for a proposed-diff so we can tear them down
+	-- again without disturbing the rest of the user's layout.
+	local diff_state = {
+		before_win = nil,
+		after_win = nil,
+		created_before = false,
+		origin_win = nil, -- window focus came from (usually the Claude terminal)
+		origin_width = nil, -- its width, so we can restore it afterwards
+	}
+
+	-- True only when we actually have a Claude proposed-diff on screen.
+	local function diff_is_open()
+		if diff_state.after_win and vim.api.nvim_win_is_valid(diff_state.after_win) then
+			return true
+		end
+		for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+			local name = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w))
+			if name:match("claude_diff") or name:match("claude_proposed") then
+				return true
+			end
+		end
+		return false
+	end
+
+	-- Run window juggling with redraws batched so the layout appears in one paint
+	-- instead of flickering through intermediate states.
+	local function without_flicker(fn)
+		local save_lz = vim.o.lazyredraw
+		vim.o.lazyredraw = true
+		local ok, err = pcall(fn)
+		vim.o.lazyredraw = save_lz
+		vim.cmd("redraw")
+		if not ok then
+			error(err)
+		end
+	end
+
+	local function close_proposed_diff()
+		-- No-op if there is no Claude diff open, so a stray post-hook can never
+		-- disturb the user's own diffs / layout.
+		if not diff_is_open() then
+			return
+		end
+
+		without_flicker(function()
+			-- Turn diff mode off only on the windows we touched.
+			for _, w in ipairs({ diff_state.before_win, diff_state.after_win }) do
+				if w and vim.api.nvim_win_is_valid(w) then
+					vim.api.nvim_win_call(w, function()
+						vim.cmd("diffoff")
+					end)
+				end
+			end
+
+			-- Close the proposed ("after") window we opened.
+			if diff_state.after_win and vim.api.nvim_win_is_valid(diff_state.after_win) then
+				pcall(vim.api.nvim_win_close, diff_state.after_win, true)
+			end
+			-- Close the "before" window only if we created it ourselves (i.e. there
+			-- was no spare editor window to reuse). Never close a window the user
+			-- already had open.
+			if diff_state.created_before and diff_state.before_win and vim.api.nvim_win_is_valid(diff_state.before_win) then
+				pcall(vim.api.nvim_win_close, diff_state.before_win, true)
+			end
+
+			-- Safety net: close any lingering proposed buffers by name.
+			for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+				local name = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w))
+				if name:match("claude_diff") or name:match("claude_proposed") then
+					pcall(vim.api.nvim_win_close, w, true)
+				end
+			end
+
+			-- Give the terminal back its original width.
+			if diff_state.origin_win and vim.api.nvim_win_is_valid(diff_state.origin_win) and diff_state.origin_width then
+				pcall(vim.api.nvim_win_set_width, diff_state.origin_win, diff_state.origin_width)
+			end
+		end)
+
+		diff_state.before_win, diff_state.after_win, diff_state.created_before = nil, nil, false
+		diff_state.origin_win, diff_state.origin_width = nil, nil
+	end
+
+	local function show_proposed_diff(target_file, temp_file)
+		-- Remember where focus started (typically the Claude terminal) so we can
+		-- return to it and restore its width — the diff is a passive preview, the
+		-- approval prompt lives in the terminal.
+		local origin_win = vim.api.nvim_get_current_win()
+		local origin_width = vim.api.nvim_win_is_valid(origin_win) and vim.api.nvim_win_get_width(origin_win) or nil
+
+		-- Clear any previous proposed-diff before opening a new one.
+		close_proposed_diff()
+
+		without_flicker(function()
+			-- Find a normal file window to host the "before" side. Skip the origin
+			-- window and any terminal/special buffers so we never bury the terminal.
+			local host = nil
+			for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+				if w ~= origin_win then
+					local bt = vim.bo[vim.api.nvim_win_get_buf(w)].buftype
+					if bt == "" or bt == "acwrite" then
+						host = w
+						break
+					end
+				end
+			end
+
+			if host then
+				vim.api.nvim_set_current_win(host)
+				vim.cmd("edit " .. vim.fn.fnameescape(target_file))
+				diff_state.created_before = false
+			else
+				-- No spare editor window: open one on the far left, leaving the
+				-- terminal (and everything else) untouched.
+				vim.cmd("topleft vsplit " .. vim.fn.fnameescape(target_file))
+				host = vim.api.nvim_get_current_win()
+				diff_state.created_before = true
+			end
+			diff_state.before_win = host
+			vim.cmd("diffthis") -- BEFORE (current on-disk content) on the left
+
+			-- Proposed content ("after") in a split to the right.
+			vim.cmd("rightbelow vsplit " .. vim.fn.fnameescape(temp_file))
+			local after_win = vim.api.nvim_get_current_win()
+			local abuf = vim.api.nvim_win_get_buf(after_win)
+			vim.bo[abuf].buftype = "nofile"
+			vim.bo[abuf].bufhidden = "wipe"
+			vim.bo[abuf].swapfile = false
+			vim.bo[abuf].modifiable = false
+			vim.cmd("diffthis") -- AFTER on the right
+			diff_state.after_win = after_win
+
+			-- Remember the terminal + restore its original width so opening the
+			-- diff doesn't shrink it. Only when it was already a sized split next
+			-- to an editor -- in the terminal-only case there's no spare room, so
+			-- forcing full width would collapse the diff windows.
+			diff_state.origin_win = origin_win
+			diff_state.origin_width = (not diff_state.created_before) and origin_width or nil
+			if vim.api.nvim_win_is_valid(origin_win) and diff_state.origin_width then
+				pcall(vim.api.nvim_win_set_width, origin_win, diff_state.origin_width)
+			end
+
+			-- Hand focus back to the Claude terminal so you can approve/deny in place.
+			if vim.api.nvim_win_is_valid(origin_win) then
+				vim.api.nvim_set_current_win(origin_win)
+				if vim.bo[vim.api.nvim_win_get_buf(origin_win)].buftype == "terminal" then
+					vim.cmd("startinsert")
+				end
+			end
+		end)
+	end
+
+	-- Expose as globals for remote-expr invocation from the hook. Defer the UI
+	-- work with vim.schedule so it runs outside the RPC fast-context (needed for
+	-- window switching + startinsert to behave).
 	_G.ClaudeShowProposedDiff = function(target_file, temp_file)
-		-- Ensure we open target_file in a main code window (not the Claude terminal pane)
-		local current_tab = vim.api.nvim_get_current_tabpage()
-		local wins = vim.api.nvim_tabpage_list_wins(current_tab)
-		local main_win = nil
-		for _, w in ipairs(wins) do
-			local buf = vim.api.nvim_win_get_buf(w)
-			local buftype = vim.bo[buf].buftype
-			if buftype == "" or buftype == "acwrite" then
-				main_win = w
-				break
-			end
-		end
-
-		if main_win then
-			vim.api.nvim_set_current_win(main_win)
-		end
-
-		-- Open target_file in current window
-		vim.cmd("edit " .. vim.fn.fnameescape(target_file))
-
-		-- Close any existing diffs to clean up
-		vim.cmd("diffoff!")
-		for _, w in ipairs(wins) do
-			local buf = vim.api.nvim_win_get_buf(w)
-			local bufname = vim.api.nvim_buf_get_name(buf)
-			if bufname:match("claude_diff") or bufname:match("claude_proposed") then
-				pcall(vim.api.nvim_win_close, w, true)
-			end
-		end
-
-		-- Open vertical split with the temp_file and start diff mode
-		vim.cmd("vsplit " .. vim.fn.fnameescape(temp_file))
-		local temp_buf = vim.api.nvim_get_current_buf()
-		vim.bo[temp_buf].buftype = "nofile"
-		vim.bo[temp_buf].bufhidden = "wipe"
-		vim.bo[temp_buf].swapfile = false
-		vim.bo[temp_buf].modifiable = false
-
-		-- Diff both windows
-		vim.cmd("diffthis")
-		vim.cmd("wincmd p") -- go back to main window
-		vim.cmd("diffthis")
+		vim.schedule(function()
+			pcall(show_proposed_diff, target_file, temp_file)
+		end)
 	end
 
 	_G.ClaudeCloseProposedDiff = function()
-		-- Turn off diff
-		vim.cmd("diffoff!")
-		-- Find any open window with the temporary proposed buffer and close it
-		local current_tab = vim.api.nvim_get_current_tabpage()
-		local wins = vim.api.nvim_tabpage_list_wins(current_tab)
-		for _, w in ipairs(wins) do
-			local buf = vim.api.nvim_win_get_buf(w)
-			local bufname = vim.api.nvim_buf_get_name(buf)
-			if bufname:match("claude_diff") or bufname:match("claude_proposed") or vim.bo[buf].buftype == "nofile" then
-				pcall(vim.api.nvim_win_close, w, true)
-			end
-		end
+		vim.schedule(function()
+			pcall(close_proposed_diff)
+		end)
 	end
 
 	-- Define user commands

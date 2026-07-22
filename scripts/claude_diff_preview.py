@@ -87,16 +87,23 @@ def main():
     if not addr:
         sys.exit(0)
 
+    try:
+        data = json.loads(sys.stdin.read())
+    except Exception:
+        data = {}
+
+    # Never touch the editor unless the edit will actually pause for manual
+    # approval. In auto-accept / bypass modes the edit applies immediately, so a
+    # diff would just flash open and shut -- skip every editor interaction
+    # (including the post-stage teardown) entirely.
+    if data.get("permission_mode") in ("auto", "acceptEdits", "bypassPermissions"):
+        sys.exit(0)
+
     if stage == "post":
         remote_expr(addr, "v:lua.ClaudeCloseProposedDiff()")
         sys.exit(0)
 
     if stage != "pre":
-        sys.exit(0)
-
-    try:
-        data = json.loads(sys.stdin.read())
-    except Exception:
         sys.exit(0)
 
     tool_name = data.get("tool_name")
