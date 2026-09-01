@@ -375,6 +375,7 @@ require("lazy").setup({
 				{ "<leader>g", group = "[G]it", mode = { "n", "v" } },
 				{ "<leader>u", group = "Q[u]ick Settings" },
 				{ "<leader>b", group = "[B]uffers" },
+				{ "<leader>P", group = "[P]latformIO" },
 			},
 		},
 	},
@@ -389,7 +390,10 @@ require("lazy").setup({
 	{ -- Fuzzy Finder (files, lsp, etc)
 		"nvim-telescope/telescope.nvim",
 		event = "VimEnter",
-		branch = "0.1.x",
+		-- 0.1.x (the old pin) predates the nvim-treesitter `main` rewrite and calls
+		-- the removed `parsers.ft_to_lang`, which crashes every previewer; it also
+		-- omits the position encoding nvim 0.11+ requires for LSP pickers.
+		branch = "master",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
 			{ -- If encountering errors, see telescope-fzf-native README for installation instructions
@@ -995,28 +999,50 @@ require("lazy").setup({
 	},
 	{ -- Highlight, edit, and navigate code
 		"nvim-treesitter/nvim-treesitter",
+		-- The `main` branch rewrite dropped the module system: `setup()` now only
+		-- takes `install_dir`, parsers are installed with `install()`, and Neovim
+		-- itself owns highlighting/indent. It also cannot be lazy-loaded.
+		lazy = false,
 		build = ":TSUpdate",
 		config = function()
-			require("nvim-treesitter").setup({
-				ensure_installed = {
-					"bash",
-					"c",
-					"diff",
-					"html",
-					"lua",
-					"luadoc",
-					"markdown",
-					"markdown_inline",
-					"query",
-					"vim",
-					"vimdoc",
-					"ocaml",
-				},
-				automatic_installation = true,
-				highlight = {
-					enabled = true,
-				},
-				indent = { enabled = true },
+			local ts = require("nvim-treesitter")
+			ts.setup({})
+
+			ts.install({
+				"bash",
+				"c",
+				"cpp",
+				"diff",
+				"html",
+				"json",
+				"lua",
+				"luadoc",
+				"markdown",
+				"markdown_inline",
+				"ocaml",
+				"python",
+				"query",
+				"rust",
+				"toml",
+				"vim",
+				"vimdoc",
+				"yaml",
+			})
+
+			-- Highlighting and indent are per-buffer opt-ins on `main`; this is what
+			-- the old `highlight`/`indent` module options used to do for us.
+			vim.api.nvim_create_autocmd("FileType", {
+				group = vim.api.nvim_create_augroup("kickstart-treesitter", { clear = true }),
+				callback = function(event)
+					local lang = vim.treesitter.language.get_lang(event.match)
+					-- `start` throws when the parser is not installed, and
+					-- `language.add` is not a reliable pre-check (it reports success
+					-- for languages that still fail to load), so guard on `start`.
+					if not (lang and pcall(vim.treesitter.start, event.buf, lang)) then
+						return
+					end
+					vim.bo[event.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+				end,
 			})
 		end,
 		-- There are additional nvim-treesitter modules that you can use to interact
