@@ -38,6 +38,8 @@ return {
 			{ "<leader>Pi", "<cmd>Pioinit<cr>", desc = "[I]nit project" },
 			{ "<leader>Pb", "<cmd>Piocmdf run<cr>", desc = "[B]uild" },
 			{ "<leader>Pu", "<cmd>Piocmdf run -t upload<cr>", desc = "[U]pload" },
+			-- Horizontal like the plain monitor: it stays open streaming serial output.
+			{ "<leader>PU", "<cmd>Piocmdh run -t upload -t monitor<cr>", desc = "[U]pload + monitor" },
 			{ "<leader>Ps", "<cmd>Piocmdh run -t monitor<cr>", desc = "[S]erial monitor" },
 			{ "<leader>PS", "<cmd>Piolsserial<cr>", desc = "List [S]erial devices" },
 			{ "<leader>Pc", "<cmd>Piocmdf run -t clean<cr>", desc = "[C]lean" },
